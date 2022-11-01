@@ -24,7 +24,7 @@
 //!
 //! ```rust
 //! use dotenv::dotenv;
-//! use dotenv_config::EnvConfig;
+//! use dotenv_config_ext::EnvConfig;
 //!
 //! #[derive(Debug, EnvConfig)]
 //! struct Config {
@@ -37,9 +37,15 @@
 //!     bar: Option<i64>,
 //! }
 //!
+//! macro_rules! aw {
+//!($e:expr) => {
+//!    tokio_test::block_on($e)
+//! };
+//! }
+//!
 //! fn main() {
 //!     dotenv().ok();
-//!     let cfg = Config::init().unwrap();
+//!     let cfg = aw!(Config::init()).unwrap();
 //!     println!("{:#?}", cfg);
 //! }
 //! ```
@@ -68,7 +74,7 @@
 //! ```
 //!
 //! If you have some problems please go to github create a issue.
-//! https://github.com/zinclabs/dotenv-config
+//! https://github.com/sombralibre/dotenv-config
 //!
 
 use proc_macro::TokenStream;

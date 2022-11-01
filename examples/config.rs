@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use dotenv_config::EnvConfig;
+use dotenv_config_ext::EnvConfig;
 
 #[derive(Debug, EnvConfig)]
 struct Config {
@@ -22,8 +22,14 @@ struct Redis {
     timeout: i32,
 }
 
+macro_rules! aw {
+    ($e:expr) => {
+        tokio_test::block_on($e)
+    };
+  }
+
 fn main() {
     dotenv().ok();
-    let cfg = Config::init().unwrap();
+    let cfg = aw!(Config::init()).unwrap();
     println!("{:#?}", cfg);
 }

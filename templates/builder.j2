@@ -1,5 +1,5 @@
 impl {{ name }} {
-    pub fn init() -> Result<{{ name }}, &'static str> {
+    pub async fn init() -> Result<{{ name }}, &'static str> {
         let mut key: &str;
         {% for field in fields %}
         {% if field.attr_name.is_empty() %}
@@ -10,7 +10,11 @@ impl {{ name }} {
         {% if contains(["usize","i16","i32","i64","u16","u32","u64","f32","f64","String","bool"], field.typ) %}
         let {{ field.name }}: Option<{{ field.typ }}> = match std::env::var(key) {
             Ok(val) => match val.parse() {
+                {% if parse_bool(field.attr_ext) %}
+                Ok(v) => Some({{ field.attr_ext_post_with }}(v).await.unwrap()),
+                {% else %}
                 Ok(v) => Some(v),
+                {% endif %}
                 Err(_) => Some("".parse().unwrap()),
             },
             Err(err) => {
@@ -22,8 +26,12 @@ impl {{ name }} {
             }
         };
         {% else %}
-        let {{ field.name }}: Option<{{ field.typ }}> = match {{ field.typ }}::init() {
+        let {{ field.name }}: Option<{{ field.typ }}> = match {{ field.typ }}::init().await {
+            {% if parse_bool(field.attr_ext) %}
+            Ok(v) => Some({{ field.attr_ext_post_with }}(v).await.unwrap()),
+            {% else %}
             Ok(v) => Some(v),
+            {% endif %}
             Err(_) => None,
         };
         {% endif %}
