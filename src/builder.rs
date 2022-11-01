@@ -26,6 +26,7 @@ pub struct BuilderContext {
     fields: Vec<Fd>,
     contains: fn(haystack: &[&str], needle: &str) -> bool,
     uppersnake: fn(s: &str) -> String,
+    parse_bool: fn(s: &str) -> bool,
 }
 
 #[derive(Debug, Default)]
@@ -35,6 +36,8 @@ struct Fd {
     optional: bool,
     attr_name: String,
     attr_default: String,
+    attr_ext: String,
+    attr_ext_post_with: String,
 }
 
 impl Fd {
@@ -45,6 +48,8 @@ impl Fd {
         // find env_config Group
         let mut attr_name: String = String::from("");
         let mut attr_default: String = String::from("");
+        let mut attr_ext: String = String::from("");
+        let mut attr_ext_post_with: String = String::from("");
         for item in name {
             if let TokenTree::Group(g) = item {
                 let mut g = g.stream().into_iter();
@@ -61,6 +66,12 @@ impl Fd {
                                     }
                                     "default" => {
                                         attr_default = item.1;
+                                    }
+                                    "ext" => {
+                                        attr_ext = item.1;
+                                    }
+                                    "ext_post_with" => {
+                                        attr_ext_post_with = item.1;
                                     }
                                     _ => {}
                                 }
@@ -99,6 +110,8 @@ impl Fd {
                     optional,
                     attr_name,
                     attr_default,
+                    attr_ext,
+                    attr_ext_post_with
                 }
             }
             e => panic!("Expect ident, but got {:?}", e),
@@ -116,6 +129,7 @@ impl BuilderContext {
             fields,
             contains: |haystack, needle| haystack.contains(&needle),
             uppersnake: |s| s.to_case(Case::UpperSnake),
+            parse_bool: |s| to_bool(s),
         }
     }
 
@@ -212,4 +226,11 @@ fn get_struct_attribute(input: TokenStream) -> Vec<(String, String)> {
             )
         })
         .collect()
+}
+
+fn to_bool(s: impl Into<String>) -> bool {
+    match s.into().parse::<bool>() {
+        Ok(b) => b,
+        _ => false,
+    }
 }

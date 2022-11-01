@@ -1,3 +1,6 @@
+# Forked from
+[zinclabs/dotenv-config](https://github.com/zinclabs/dotenv-config/)
+
 # Dot Env Config
 
 use `.env` as config file and parse environments to config struct.
@@ -49,4 +52,50 @@ CONFIG_SERVER_ADDR
 CONFIG_SERVER_MODE
 ZINC_FOO
 ZINC_BAR
+```
+
+## Added feature
+Allows the usage of external function to post-process the field value once it get parsed.
+
+For example we can pass an environment variable with an aws ARN for a secret manager, so once the value of the arn 
+has been parsed, the added function specified in `ext_post_with` will retrieve the value from aws.
+
+### Usage
+
+```rust
+use dotenv::dotenv;
+use dotenv_config::EnvConfig;
+
+fn ssm_client(s: String) -> Result<String, ()>{
+    Ok(s)
+}
+
+#[derive(Debug, EnvConfig)]
+struct Config {
+    #[env_config(default = "192.168.2.1", ext=true, ext_post_with="ssm_client")]
+    server_addr: String,
+    server_mode: bool,
+    #[env_config(name = "ZINC_FOO", default = true)]
+    foo: bool,
+    #[env_config(name = "ZINC_BAR", default = 123456)]
+    bar: Option<i64>,
+}
+#[tokio::main]
+async fn main() {
+    dotenv().ok();
+    let cfg = Config::init().await.unwrap();
+    println!("{:#?}", cfg);
+}
+```
+
+### Attributes
+
+`ext: bool` enable or disable feature.
+
+`ext_post_with: String` required if `ext` is true.
+
+The attribute `ext_post_with` receive a function name as a string, the function passed must have the following signature:
+
+```rust
+async fn func(_: String) -> Result<String, E>;
 ```
